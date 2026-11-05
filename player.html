@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Space Invaders</title>
+    <style>
+      html,
+      body,
+      #unity-container {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+      }
+
+      #unity-container {
+        position: relative;
+      }
+
+      #unity-canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: #000;
+        outline: none;
+      }
+
+      #unity-loading-bar {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: min(80%, 360px);
+        transform: translate(-50%, -50%);
+        color: #fff;
+        font: 16px sans-serif;
+        text-align: center;
+      }
+
+      #unity-progress-bar-empty {
+        height: 8px;
+        margin-top: 12px;
+        overflow: hidden;
+        border-radius: 4px;
+        background: #444;
+      }
+
+      #unity-progress-bar-full {
+        width: 0;
+        height: 100%;
+        background: #fff;
+        transition: width 150ms linear;
+      }
+
+      #unity-warning {
+        position: absolute;
+        z-index: 1;
+        top: 0;
+        left: 0;
+        width: 100%;
+      }
+
+      #unity-warning > div {
+        padding: 10px;
+        color: #111;
+        font: 14px sans-serif;
+        overflow-wrap: anywhere;
+      }
+
+      #unity-fullscreen-button {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        padding: 8px 12px;
+        border: 1px solid #aaa;
+        border-radius: 4px;
+        color: #fff;
+        background: #222;
+        cursor: pointer;
+      }
+
+      #unity-fullscreen-button:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="unity-container">
+      <canvas id="unity-canvas" width="960" height="600" tabindex="0" aria-label="Space Invaders game"></canvas>
+      <div id="unity-loading-bar" role="status" aria-live="polite">
+        <div>Loading Space Invaders…</div>
+        <div id="unity-progress-bar-empty" aria-hidden="true">
+          <div id="unity-progress-bar-full"></div>
+        </div>
+      </div>
+      <div id="unity-warning" role="status" aria-live="polite"></div>
+      <button id="unity-fullscreen-button" type="button">Fullscreen</button>
+    </main>
+
+    <script>
+      const canvas = document.querySelector("#unity-canvas");
+      const loadingBar = document.querySelector("#unity-loading-bar");
+      const progressBar = document.querySelector("#unity-progress-bar-full");
+      const warning = document.querySelector("#unity-warning");
+
+      function unityShowBanner(message, type) {
+        const banner = document.createElement("div");
+        banner.textContent = message;
+        banner.style.background = type === "error" ? "#f44336" : "#ffeb3b";
+        warning.appendChild(banner);
+
+        if (type !== "error") {
+          window.setTimeout(() => banner.remove(), 5000);
+        }
+      }
+
+      const buildUrl = "Builds";
+      const config = {
+        dataUrl: `${buildUrl}/SpaceInvaders_WebGL.data.gz`,
+        frameworkUrl: `${buildUrl}/SpaceInvaders_WebGL.framework.js.gz`,
+        codeUrl: `${buildUrl}/SpaceInvaders_WebGL.wasm.gz`,
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: "DefaultCompany",
+        productName: "Space Invaders",
+        productVersion: "1.0",
+        showBanner: unityShowBanner,
+      };
+
+      const loader = document.createElement("script");
+      loader.src = `${buildUrl}/SpaceInvaders_WebGL.loader.js`;
+      loader.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          progressBar.style.width = `${100 * progress}%`;
+        }).then((unityInstance) => {
+          loadingBar.style.display = "none";
+          document.querySelector("#unity-fullscreen-button").addEventListener("click", () => {
+            unityInstance.SetFullscreen(1);
+          });
+        }).catch((error) => {
+          loadingBar.style.display = "none";
+          unityShowBanner(`Unable to load the game: ${error}`, "error");
+        });
+      };
+      loader.onerror = () => {
+        loadingBar.style.display = "none";
+        unityShowBanner("Unable to load the Unity WebGL loader. Check the Builds folder and hosting configuration.", "error");
+      };
+      document.body.appendChild(loader);
+    </script>
+  </body>
+</html>
